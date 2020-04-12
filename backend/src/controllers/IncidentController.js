@@ -1,5 +1,6 @@
 
 const connection = require('../database/connection')
+const {getUser} = require('../auth')
 
 module.exports = {
 
@@ -24,8 +25,19 @@ module.exports = {
     return res.json(incidents)
   },
   async create(req, res) {
-    const {title, description, value} = req.body
-    const ong_id = req.headers.authorization
+    const {title, description, value, ong_id} = req.body
+
+    const user = await getUser(req)
+
+    const user_ongs = await connection('ong_user')
+      .select('ong_id')
+      .where({user_id: user.id})
+
+    const user_ongs_ids = user_ongs.map(el => el.ong_id)
+
+    if (!new Set(user_ongs_ids).has(ong_id)) {
+      return res.status(401).json({error: 'You don\'t have permissions'})
+    }
 
     const [id] = await connection('incidents').insert({
       title, description, value, ong_id
@@ -35,15 +47,22 @@ module.exports = {
   },
   async delete(req, res) {
     const {id} = req.params
-    const ong_id = req.headers.authorization
 
-    const incident = await connection('incidents')
+    const {ong_id} = await connection('incidents')
       .where('id', id)
       .select('ong_id')
       .first()
 
-    if (incident.ong_id !== ong_id) {
-      return res.status(401).json({error: 'Unauthorized'})
+    const user = await getUser(req)
+
+    const user_ongs = await connection('ong_user')
+      .select('ong_id')
+      .where({user_id: user.id})
+
+    const user_ongs_ids = user_ongs.map(el => el.ong_id)
+
+    if (!new Set(user_ongs_ids).has(ong_id)) {
+      return res.status(401).json({error: 'You don\'t have permissions'})
     }
 
     await connection('incidents').where('id', id).delete()

@@ -1,43 +1,60 @@
 const express = require('express');
-const {celebrate, Segments, Joi} = require('celebrate')
+
+const { getUser, requireLogin } = require('./auth')
 
 const OngController = require('./controllers/OngController')
 const IncidentController = require('./controllers/IncidentController')
 const ProfileController = require('./controllers/ProfileController')
 const SessionController = require('./controllers/SessionController')
+const UserController = require('./controllers/UserController')
+const OngUserController = require('./controllers/OngUserController')
+const UserOngController = require('./controllers/UserOngController')
+
+const OngValidator = require('./validators/OngValidator')
+const IncidentValidator = require('./validators/IncidentValidator')
+const UserValidator = require('./validators/UserValidator')
+const SessionValidator = require('./validators/SessionValidator')
+const OngUserValidator = require('./validators/OngUserValidator')
+const UserOngValidator = require('./validators/UserOngValidator')
+
 
 const router = express.Router();
 
-router.post('/sessions', SessionController.create)
+router.post('/sessions', SessionValidator.create, SessionController.create)
+
+// OngController
 
 router.get('/ongs', OngController.list)
 
-router.post('/ongs', celebrate({
-  [Segments.BODY]: Joi.object().keys({
-    name: Joi.string().required(),
-    email: Joi.string().required().email(),
-    whatsapp: Joi.string().required().min(10).max(11),
-    city: Joi.string(),
-    uf: Joi.string().required().length(2),
-  })
-}) ,OngController.create)
+router.post('/ongs', OngValidator.create, OngController.create)
 
-router.get('/profile', celebrate({
-  [Segments.HEADERS]: Joi.object({
-    authorization: Joi.string().required(),
-  }).unknown()
-}), ProfileController.list)
+// Profile Controller
 
-router.get('/incidents', celebrate({
-  [Segments.QUERY]: Joi.object().keys({
-    page: Joi.number(),
-  })
-}), IncidentController.list)
-router.post('/incidents', IncidentController.create)
-router.delete('/incidents/:id', celebrate({
-  [Segments.PARAMS]: Joi.object().keys({
-    id: Joi.number().required()
-  })
-}), IncidentController.delete)
+router.get('/profile', requireLogin, ProfileController.list)
+
+// Incident Controller
+
+router.get('/incidents', IncidentValidator.list, IncidentController.list)
+
+router.post('/incidents', requireLogin, IncidentValidator.create, IncidentController.create)
+
+router.delete('/incidents/:id', requireLogin, IncidentValidator.delete, IncidentController.delete)
+
+// User Controller
+
+router.post('/users/', UserValidator.create, UserController.create)
+
+// Ong User Controller
+
+router.get('/users/:user_id/ongs/', UserOngValidator.list, UserOngController.list)
+
+// Ong User Controller
+
+router.get('/ongs/:ong_id/users/', OngUserValidator.list, OngUserController.list)
+
+router.post('/ongs/:ong_id/users/', OngUserValidator.create, OngUserController.create)
+
+router.delete('/ongs/:ong_id/users/:user_id/', OngUserValidator.delete, OngUserController.delete)
+
 
 module.exports = router

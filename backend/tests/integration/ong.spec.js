@@ -1,10 +1,11 @@
+const fs = require('fs');
 const request = require('supertest')
 const app = require('../../src/app')
 const connection = require('../../src/database/connection')
 
 describe('ONG', () => {
   beforeEach(async () => {
-    await connection.migrate.rollback()
+    // await fs.unlinkSync('./src/database/test.sqlite')
     await connection.migrate.latest()
   })
 

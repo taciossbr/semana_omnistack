@@ -1,8 +1,10 @@
 const express = require('express');
+const {errors} = require('celebrate')
 const cors = require('cors')
+const jwt = require('jsonwebtoken');
+
 const routes = require('./routes')
 
-const {errors} = require('celebrate')
 
 const app = express();
 
